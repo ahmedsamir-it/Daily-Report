@@ -111,6 +111,7 @@ h3{text-align:center;margin-bottom:20px;}
 const supabaseUrl = 'https://ykigxlvuocykhschywfm.supabase.co';
 const supabaseKey = 'sb_publishable_p7mTSVnHqSIchzGpEpOW6w_z9ta2703';
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+console.log("Supabase client:", supabase);
 
 // ===== Multi-select setup =====
 function setupMultiSelect(boxId, allowAll=false){
@@ -125,15 +126,41 @@ setupMultiSelect('appsBox'); setupMultiSelect('citiesBox',true);
 function getSelected(boxId){ return Array.from(document.getElementById(boxId).querySelectorAll('button.active')).map(b=>b.textContent); }
 
 // ===== Login / Logout =====
-async function login(){
-  const username=document.getElementById('username').value.trim();
-  const password=document.getElementById('password').value.trim();
-  if(!username || !password){ document.getElementById('loginMsg').innerText="الرجاء إدخال الاسم وكلمة المرور"; return; }
-  const { data } = await supabase.from('users').select('*').eq('name', username).eq('password', password).single();
-  if(data){ localStorage.user_name=username; localStorage.role=data.role; showReport(); } 
-  else { document.getElementById('loginMsg').innerText="بيانات غير صحيحة"; }
+async function login() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  if (!username || !password) {
+    document.getElementById('loginMsg').innerText = "الرجاء إدخال الاسم وكلمة المرور";
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('name', username)
+      .eq('password', password)
+      .single();
+
+    console.log("Login attempt:", { data, error });
+
+    if (error) {
+      document.getElementById('loginMsg').innerText = "حدث خطأ: " + error.message;
+    } else if (!data) {
+      document.getElementById('loginMsg').innerText = "بيانات غير صحيحة";
+    } else {
+      localStorage.user_name = data.name;
+      localStorage.role = data.role;
+      showReport();
+    }
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    document.getElementById('loginMsg').innerText = "حدث خطأ غير متوقع";
+  }
 }
-function logout(){ localStorage.clear(); location.reload(); }
+
+function logout() { localStorage.clear(); location.reload(); }
 
 // ===== Show Report =====
 function showReport(){
@@ -229,7 +256,6 @@ async function loadDashboard(){
 
 // ===== Auto show if logged =====
 if(localStorage.user_name){ showReport(); }
-
 </script>
 </body>
 </html>
