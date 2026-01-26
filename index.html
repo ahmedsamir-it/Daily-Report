@@ -2,160 +2,234 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>تقرير المتابعة اليومي</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>تقرير المتابعة + Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 <style>
-body{
-  min-height:100vh;
-  background: linear-gradient(135deg,#0f2a44,#1f6fd8,#0b1c2d);
-  font-family:"Segoe UI",Tahoma;
-  color:#fff;
-}
-
-.glass{
-  background: rgba(255,255,255,.12);
-  backdrop-filter: blur(15px);
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,.3);
-}
-
-h1{
-  font-weight:700;
-}
-
-.form-check-input:checked{
-  background-color:#ffc107;
-  border-color:#ffc107;
-}
-
-.btn-main{
-  background: linear-gradient(135deg,#ffc107,#ff9800);
-  color:#000;
-  font-weight:700;
-  border:none;
-}
-
-.btn-main:hover{
-  opacity:.9;
-}
+body{font-family:'Tajawal',sans-serif;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff;min-height:100vh;margin:0;padding:20px 10px;}
+.glass{background:rgba(255,255,255,.15);backdrop-filter:blur(15px);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.3);width:100%;max-width:1000px;margin-bottom:20px;}
+h3{text-align:center;margin-bottom:20px;}
+.multi-box{display:flex;flex-wrap:wrap;gap:8px;margin-top:5px;}
+.multi-box button{border:none;padding:10px 18px;border-radius:25px;background:rgba(255,255,255,.25);color:#fff;cursor:pointer;transition:.3s;flex:1 1 calc(33% - 10px);text-align:center;min-width:80px;}
+.multi-box button.active{background:#0d6efd;}
+.admin-panel{background:rgba(0,0,0,.25);padding:15px;border-radius:10px;margin-top:20px;}
+.hidden{display:none;}
+#filesList a{color:#ffc107;text-decoration:underline;}
+@media(max-width:768px){.multi-box button{flex:1 1 calc(50% - 10px);}}
+@media(max-width:480px){.multi-box button{flex:1 1 100%;}.glass{padding:15px;}}
 </style>
 </head>
-
 <body>
 
-<div class="container py-5">
-  <div class="glass p-4 p-md-5">
+<!-- Login -->
+<div id="loginDiv" class="glass">
+  <h3>تسجيل الدخول</h3>
+  <input id="username" class="form-control mb-2" placeholder="اسم المستخدم">
+  <input id="password" type="password" class="form-control mb-2" placeholder="كلمة المرور">
+  <button class="btn btn-primary w-100" onclick="login()">دخول</button>
+  <p id="loginMsg" class="text-danger mt-2"></p>
+</div>
 
-    <h1 class="text-center mb-4">📊 تقرير المتابعة اليومي</h1>
+<!-- Report Form -->
+<div id="reportDiv" class="glass hidden">
+<h3>📋 تقرير المتابعة اليومي</h3>
+<form id="reportForm">
+<div class="row g-3">
 
-    <!-- FORM -->
-    <form id="reportForm">
+<div class="col-12 col-md-4"><label>التاريخ</label><input type="date" class="form-control" id="date"></div>
+<div class="col-12 col-md-4"><label>بدء الشيفت</label><input type="time" class="form-control" id="shiftStart"></div>
+<div class="col-12 col-md-4"><label>انتهاء الشيفت</label><input type="time" class="form-control" id="shiftEnd"></div>
 
-      <div class="mb-3">
-        <label class="form-label">اسم الموظف</label>
-        <input type="text" class="form-control" id="employee" required>
-      </div>
+<div class="col-12 col-md-6"><label>التطبيقات</label>
+<div class="multi-box" id="appsBox">
+<button type="button">كيتا</button><button type="button">هنقرستيشن</button><button type="button">جاهز</button>
+<button type="button">ذا شيفز</button><button type="button">مرسول</button><button type="button">تويو</button><button type="button">نينجا</button>
+</div></div>
 
-      <div class="mb-3">
-        <label class="form-label">المدينة</label>
-        <div class="row">
+<div class="col-12 col-md-6"><label>المدن</label>
+<div class="multi-box" id="citiesBox">
+<button type="button" data-all="true">جميع المدن</button>
+<button type="button">الرياض</button><button type="button">الخرج</button><button type="button">الدمام</button>
+<button type="button">جدة</button><button type="button">المدينة</button><button type="button">حائل</button>
+<button type="button">بريدة</button><button type="button">تبوك</button><button type="button">أبها</button><button type="button">الطائف</button>
+</div></div>
 
-          <div class="col-6">
-            <div class="form-check">
-              <input class="form-check-input city" type="checkbox" value="الرياض">
-              <label class="form-check-label">الرياض</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input city" type="checkbox" value="جدة">
-              <label class="form-check-label">جدة</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input city" type="checkbox" value="الدمام">
-              <label class="form-check-label">الدمام</label>
-            </div>
-          </div>
+<div class="col-6 col-md-3"><label>المكالمات الصادرة</label><input type="number" class="form-control" id="callsOut"></div>
+<div class="col-6 col-md-3"><label>المكالمات الواردة</label><input type="number" class="form-control" id="callsIn"></div>
+<div class="col-6 col-md-3"><label>واتساب صادر</label><input type="number" class="form-control" id="whatsOut"></div>
+<div class="col-6 col-md-3"><label>واتساب وارد</label><input type="number" class="form-control" id="whatsIn"></div>
 
-          <div class="col-6">
-            <div class="form-check">
-              <input class="form-check-input city" type="checkbox" value="المدينة">
-              <label class="form-check-label">المدينة</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input city" type="checkbox" value="أبها">
-              <label class="form-check-label">أبها</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input city" id="allCities" type="checkbox" value="جميع المدن">
-              <label class="form-check-label fw-bold text-warning">جميع المدن</label>
-            </div>
-          </div>
+<div class="col-12"><label>المهام المنجزة</label><textarea class="form-control" rows="3" id="tasks"></textarea></div>
 
-        </div>
-      </div>
+<div class="col-12 mt-2">
+  <label>رفع الملفات (صور / PDF)</label>
+  <input type="file" id="filesInput" class="form-control" multiple>
+  <div id="filesList" class="mt-2"></div>
+</div>
 
-      <div class="mb-3">
-        <label class="form-label">الملاحظات</label>
-        <textarea class="form-control" id="notes" rows="3"></textarea>
-      </div>
+<div class="col-12 text-center">
+<button type="button" class="btn btn-success mt-3 px-5" onclick="saveReport()">حفظ التقرير</button>
+<button type="button" class="btn btn-danger mt-3 px-5" onclick="logout()">تسجيل خروج</button>
+</div>
 
-      <button type="submit" class="btn btn-main w-100 py-2">
-        🚀 إرسال التقرير
-      </button>
+</div></form>
 
-      <div id="status" class="text-center mt-3"></div>
+<!-- Admin Panel -->
+<div id="adminPanel" class="admin-panel hidden">
+<h4>👥 إدارة المستخدمين</h4>
+<div class="row g-2 mb-3">
+<div class="col-12 col-md-4"><input type="text" class="form-control" placeholder="اسم المستخدم" id="newUserName"></div>
+<div class="col-12 col-md-4"><input type="text" class="form-control" placeholder="كلمة المرور" id="newUserPass"></div>
+<div class="col-6 col-md-2"><select class="form-select" id="newUserRole"><option value="User">User</option><option value="Admin">Admin</option></select></div>
+<div class="col-6 col-md-2"><button class="btn btn-primary w-100" onclick="addUser()">إضافة مستخدم</button></div>
+</div>
+<ul class="list-group" id="userList"></ul>
+</div>
 
-    </form>
+<!-- Dashboard -->
+<div id="dashboardDiv" class="glass hidden mt-4">
+<h3>📊 Dashboard</h3>
+<div class="row g-2 mb-3">
+  <div class="col-12 col-md-6"><label>اختر المستخدم</label>
+    <select id="filterUser" class="form-select" onchange="loadDashboard()">
+      <option value="">كل المستخدمين</option>
+    </select>
   </div>
+  <div class="col-12 col-md-6"><label>اختر التاريخ</label>
+    <input type="date" id="filterDate" class="form-control" onchange="loadDashboard()">
+  </div>
+</div>
+<canvas id="chartCalls" height="150"></canvas>
+<canvas id="chartWhats" height="150" class="mt-4"></canvas>
+<div id="dashboardFiles" class="mt-3"></div>
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbxnE76UN44BlYAx-bcFU8nJz38WOfErB-SkyIpVkTvYMXqXLeNb0nCOVzUTJl1wnTu8/exec";
+// ===== Supabase setup =====
+const supabaseUrl = 'https://ykigxlvuocykhschywfm.supabase.co';
+const supabaseKey = 'sb_publishable_p7mTSVnHqSIchzGpEpOW6w_z9ta2703';
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-const form = document.getElementById("reportForm");
-const statusDiv = document.getElementById("status");
-const allCities = document.getElementById("allCities");
-const cities = document.querySelectorAll(".city");
+// ===== Multi-select setup =====
+function setupMultiSelect(boxId, allowAll=false){
+  const box=document.getElementById(boxId);
+  const buttons=box.querySelectorAll('button');
+  buttons.forEach(btn=>btn.addEventListener('click', ()=>{
+    if(allowAll && btn.dataset.all){ buttons.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+    else{ btn.classList.toggle('active'); if(allowAll){ const allBtn = box.querySelector('[data-all]'); if(allBtn) allBtn.classList.remove('active'); } }
+  }));
+}
+setupMultiSelect('appsBox'); setupMultiSelect('citiesBox',true);
+function getSelected(boxId){ return Array.from(document.getElementById(boxId).querySelectorAll('button.active')).map(b=>b.textContent); }
 
-/* جميع المدن تلغي الباقي */
-allCities.addEventListener("change", ()=>{
-  cities.forEach(c => c.checked = false);
-});
+// ===== Login / Logout =====
+async function login(){
+  const username=document.getElementById('username').value.trim();
+  const password=document.getElementById('password').value.trim();
+  if(!username || !password){ document.getElementById('loginMsg').innerText="الرجاء إدخال الاسم وكلمة المرور"; return; }
+  const { data } = await supabase.from('users').select('*').eq('name', username).eq('password', password).single();
+  if(data){ localStorage.user_name=username; localStorage.role=data.role; showReport(); } 
+  else { document.getElementById('loginMsg').innerText="بيانات غير صحيحة"; }
+}
+function logout(){ localStorage.clear(); location.reload(); }
 
-/* اختيار مدينة يلغي جميع المدن */
-cities.forEach(c=>{
-  c.addEventListener("change", ()=>{
-    if(c.checked) allCities.checked = false;
-  });
-});
+// ===== Show Report =====
+function showReport(){
+  document.getElementById('loginDiv').classList.add('hidden');
+  document.getElementById('reportDiv').classList.remove('hidden');
+  if(localStorage.role==='Admin'){
+    document.getElementById('adminPanel').classList.remove('hidden');
+    document.getElementById('dashboardDiv').classList.remove('hidden');
+    loadUsers(); loadFilterUsers(); loadDashboard();
+  }
+}
 
-/* submit */
-form.addEventListener("submit", e=>{
-  e.preventDefault();
+// ===== Upload Files =====
+async function uploadFiles(reportDate){
+  const files=document.getElementById('filesInput').files;
+  if(!files.length) return [];
+  const uploadedUrls=[];
+  for(const file of files){
+    const path=`${reportDate}/${file.name}`;
+    const { data, error } = await supabase.storage.from('reports-files').upload(path, file, {cacheControl:'3600', upsert:true});
+    if(error){ console.error("رفع الملف خطأ:",file.name,error.message); continue; }
+    const { data: urlData } = supabase.storage.from('reports-files').getPublicUrl(path);
+    uploadedUrls.push(urlData.publicUrl);
+  }
+  return uploadedUrls;
+}
 
-  const selectedCities = [];
-  document.querySelectorAll("input[type=checkbox]:checked").forEach(c=>{
-    selectedCities.push(c.value);
-  });
+// ===== Save Report =====
+async function saveReport(){
+  const date=document.getElementById('date').value; if(!date){ alert("اختر التاريخ"); return; }
+  const shiftStart=document.getElementById('shiftStart').value;
+  const shiftEnd=document.getElementById('shiftEnd').value;
+  const apps=getSelected('appsBox'); const cities=getSelected('citiesBox');
+  const callsOut=Number(document.getElementById('callsOut').value||0);
+  const callsIn=Number(document.getElementById('callsIn').value||0);
+  const whatsOut=Number(document.getElementById('whatsOut').value||0);
+  const whatsIn=Number(document.getElementById('whatsIn').value||0);
+  const tasks=document.getElementById('tasks').value||''; const user_name=localStorage.user_name;
+  const fileUrls = await uploadFiles(date);
 
-  const data = new URLSearchParams({
-    employee: document.getElementById("employee").value,
-    city: selectedCities.join(", "),
-    notes: document.getElementById("notes").value
-  });
+  const { error } = await supabase.from('reports').insert([{
+    date, shift_start: shiftStart, shift_end: shiftEnd,
+    apps, cities, calls_out: callsOut, calls_in: callsIn,
+    whats_out: whatsOut, whats_in: whatsIn, tasks, user_name, files:fileUrls
+  }]);
+  if(error) alert("حدث خطأ: "+error.message); 
+  else { alert("تم حفظ التقرير مع الملفات!"); document.getElementById('filesInput').value=""; if(localStorage.role==='Admin') loadDashboard(); }
+}
 
-  statusDiv.innerHTML = "⏳ جاري الإرسال...";
+// ===== Users Management =====
+async function loadUsers(){
+  const { data } = await supabase.from('users').select('*');
+  const list=document.getElementById('userList'); list.innerHTML="";
+  data.forEach(u=>{ const li=document.createElement('li'); li.className="list-group-item d-flex justify-content-between align-items-center"; li.innerHTML=`${u.name} - ${u.role} <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">حذف</button>`; list.appendChild(li); });
+}
+async function addUser(){
+  const name=document.getElementById('newUserName').value.trim();
+  const pass=document.getElementById('newUserPass').value.trim();
+  if(!name||!pass){ alert("ادخل الاسم وكلمة المرور"); return; }
+  const role=document.getElementById('newUserRole').value;
+  const { error } = await supabase.from('users').insert([{name,password:pass,role}]);
+  if(error) alert("خطأ: "+error.message); else { loadUsers(); alert("تم إضافة المستخدم!"); }
+}
+async function deleteUser(id){ if(!confirm('هل أنت متأكد؟')) return; const { error } = await supabase.from('users').delete().eq('id', id); if(error) alert("خطأ: "+error.message); else { loadUsers(); alert("تم حذف المستخدم!"); } }
 
-  fetch(scriptURL,{
-    method:"POST",
-    body:data
-  })
-  .then(()=> statusDiv.innerHTML = "✅ تم الإرسال بنجاح")
-  .catch(()=> statusDiv.innerHTML = "❌ فشل الإرسال");
-});
+// ===== Filter Users =====
+async function loadFilterUsers(){ const { data } = await supabase.from('users').select('name'); const sel=document.getElementById('filterUser'); sel.innerHTML='<option value="">كل المستخدمين</option>'; data.forEach(u=>{ const opt=document.createElement('option'); opt.value=u.name; opt.textContent=u.name; sel.appendChild(opt); }); }
+
+// ===== Dashboard =====
+let chartCalls, chartWhats;
+async function loadDashboard(){
+  let userFilter=document.getElementById('filterUser').value;
+  let dateFilter=document.getElementById('filterDate').value;
+  let query = supabase.from('reports').select('*');
+  if(userFilter) query=query.eq('user_name',userFilter);
+  if(dateFilter) query=query.eq('date',dateFilter);
+  const { data } = await query;
+  const labels=data.map(d=>d.date);
+  const callsOut=data.map(d=>d.calls_out);
+  const callsIn=data.map(d=>d.calls_in);
+  const whatsOut=data.map(d=>d.whats_out);
+  const whatsIn=data.map(d=>d.whats_in);
+
+  if(chartCalls) chartCalls.destroy();
+  chartCalls=new Chart(document.getElementById('chartCalls'),{type:'bar',data:{labels,datasets:[{label:'المكالمات الصادرة',data:callsOut,backgroundColor:'#0d6efd'},{label:'المكالمات الواردة',data:callsIn,backgroundColor:'#198754'}]}});
+  if(chartWhats) chartWhats.destroy();
+  chartWhats=new Chart(document.getElementById('chartWhats'),{type:'bar',data:{labels,datasets:[{label:'واتساب صادر',data:whatsOut,backgroundColor:'#ffc107'},{label:'واتساب وارد',data:whatsIn,backgroundColor:'#dc3545'}]}});
+
+  // عرض الملفات
+  const filesDiv=document.getElementById('dashboardFiles'); filesDiv.innerHTML="";
+  data.forEach(d=>{ if(d.files && d.files.length){ d.files.forEach(url=>{ const link=document.createElement('a'); link.href=url; link.target="_blank"; link.textContent="📄 "+url.split('/').pop(); filesDiv.appendChild(link); filesDiv.appendChild(document.createElement('br')); }); }});
+}
+
+// ===== Auto show if logged =====
+if(localStorage.user_name){ showReport(); }
+
 </script>
-
 </body>
 </html>
